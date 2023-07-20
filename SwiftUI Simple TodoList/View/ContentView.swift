@@ -8,11 +8,20 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    // MARK: user typed keyword
+    @State var searchKeyword: String = ""
 
+    var results: [Todo] {
+        return searchKeyword.isEmpty ? todos : todos.filter({ todo in
+            todo.title.lowercased().contains(searchKeyword.lowercased())
+        })
+    }
+    
     var body: some View {
         NavigationView {
             List {
-                ForEach(todos, id: \.self) { todo in
+                ForEach(results, id: \.self) { todo in
                     NavigationLink(destination: TodoDetailView(todo: todo)) {
                         HStack(alignment: .center) {
                             VStack(alignment: .leading) {
@@ -31,6 +40,8 @@ struct ContentView: View {
             .listStyle(.inset)
             .padding()
             .navigationTitle("Todo List")
+            // MARK: Add searchable modifier
+            .searchable(text: $searchKeyword)
         }
     }
 
