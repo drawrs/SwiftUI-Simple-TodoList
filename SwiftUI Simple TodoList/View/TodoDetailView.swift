@@ -14,23 +14,15 @@ struct TodoDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(todo.title ?? "")
+            Text(todo.title)
                 .font(.title)
-            Text(formatDate(todo.date ?? Date()))
+            Text(formatDate(todo.date))
                 .font(.subheadline)
                 .foregroundColor(.gray)
-            StatusIndicator(status: todo.status == "completed" ? .completed : .pending)
+            StatusIndicator(status: todo.status)
         }
         .padding()
         .navigationTitle("Todo Details")
-        .toolbar {
-            Button("Edit") {
-                isShowingEditForm.toggle()
-            }
-        }
-        .sheet(isPresented: $isShowingEditForm) {
-            TodoInputForm(todo: todo, isPresented: $isShowingEditForm)
-        }
     }
 
     private func formatDate(_ date: Date) -> String {
