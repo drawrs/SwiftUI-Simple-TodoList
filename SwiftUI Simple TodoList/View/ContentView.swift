@@ -8,40 +8,52 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var manager: DataManager
+    @Environment(\.managedObjectContext) var viewContext
     
     // MARK: user typed keyword
     @State var searchKeyword: String = ""
-
-    var results: [Todo] {
-        return searchKeyword.isEmpty ? todos : todos.filter({ todo in
-            todo.title.lowercased().contains(searchKeyword.lowercased())
-        })
-    }
+    @State var isSheetPresented: Bool = false
+    @FetchRequest(sortDescriptors: []) private var todos: FetchedResults<Todo>
+    
     
     var body: some View {
         NavigationView {
             List {
-                ForEach(results, id: \.self) { todo in
+                ForEach(todos, id: \.self) { todo in
                     NavigationLink(destination: TodoDetailView(todo: todo)) {
                         HStack(alignment: .center) {
                             VStack(alignment: .leading) {
-                                Text(todo.title)
+                                Text(todo.title ?? "")
                                     .font(.title3)
-                                Text(formatDate(todo.date))
+                                Text(formatDate(todo.date ?? Date()))
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
                             }
                             Spacer()
-                            StatusIndicator(status: todo.status)
+                            StatusIndicator(status: todo.status == "completed" ? .completed : .pending)
                         }
                     }
                 }
+                .onDelete(perform: delete)
             }
             .listStyle(.inset)
             .padding()
             .navigationTitle("Todo List")
             // MARK: Add searchable modifier
             .searchable(text: $searchKeyword)
+            .onChange(of: searchKeyword) { newValue in
+                self.todos.nsPredicate = newValue.isEmpty ? nil : NSPredicate(format: "title CONTAINS %@", newValue)
+            }
+            .sheet(isPresented: $isSheetPresented, content: {
+                TodoInputForm(isPresented: $isSheetPresented)
+            })
+            
+            .toolbar {
+                Button("Add") {
+                    isSheetPresented.toggle()
+                }
+            }
         }
     }
 
@@ -50,6 +62,19 @@ struct ContentView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+    
+    private func delete(at offsets: IndexSet) {
+        for index in offsets {
+            let todo = todos[index]
+            self.viewContext.delete(todo)
+            do {
+                try viewContext.save()
+                print("perform delete")
+            } catch {
+                // handle the Core Data error
+            }
+        }
     }
 }
 
